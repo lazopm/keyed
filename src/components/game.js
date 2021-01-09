@@ -27,7 +27,7 @@ const generatePrompt = (layout, scoreMap) => {
   };
 
   const newKey = findNew(layout.tree);
-  const prompt = [newKey];
+  const prompt = newKey ? [newKey] : [];
   while (prompt.length < Math.min(Math.max(learned.length, 5), 8)) {
     const randomKey =
       learned[Math.round(Math.random() * (learned.length - 1))] || newKey;
