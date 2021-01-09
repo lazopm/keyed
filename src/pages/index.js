@@ -13,6 +13,8 @@ const Home = () => {
       <Head>
         <title>Keyed</title>
         <link rel="icon" href="/favicon.ico" />
+        <link rel="preconnect" href="https://fonts.gstatic.com"/>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto&family=Roboto+Slab:wght@500&display=swap" rel="stylesheet"/>
       </Head>
 
       <main>{layout ? <Game layout={layout} /> : null}</main>
@@ -22,9 +24,7 @@ const Home = () => {
         body {
           padding: 0;
           margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
+          font-family: Roboto, sans-serif;
         }
 
         * {

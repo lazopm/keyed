@@ -2,17 +2,20 @@ import { useState, useRef, useEffect } from 'react';
 
 const LEARNED_THRESHOLD = 5;
 
-const generatePrompt = (layout, learnings) => {
-  const learned = [];
+const getLearnedNodes = scoreMap => Array.from(scoreMap.entries())
+    .filter(([k,v]) => v >= LEARNED_THRESHOLD)
+    .map(([k,v]) => k);
+
+const generatePrompt = (layout, scoreMap) => {
+  const learned = getLearnedNodes(scoreMap);
   const findNew = nodes => {
     const seen = new Set();
     const queue = [...nodes];
     while (queue.length > 0) {
       const node = queue.shift();
-      if (learnings.get(node) < LEARNED_THRESHOLD) {
+      if (!learned.includes(node)) {
         return node;
       }
-      learned.push(node);
       [...node.children]
         .filter(child => !seen.has(child))
         .forEach(child => {
@@ -43,7 +46,42 @@ const buildLearningsMap = layout =>
     return map;
   }, new Map());
 
-const Prompt = ({ position, error, prompt, layout }) => {
+const ScoreBoard = ({ scoreMap }) => {
+  const learned = getLearnedNodes(scoreMap);
+  return (
+    <>
+      <style jsx>{`
+	.root {
+	  display: flex;
+	}
+	.score {
+	  color: grey;
+	  font-size: 40px;
+	  margin-right: 5px;
+	  margin-left: 5px;
+	}
+        .key {
+	  border: 3px solid grey;
+	  border-radius: 3px;
+	  font-size: 20px;
+	  color: grey;
+	  width: 40px;
+	  height: 40px;
+	  padding: 2px;
+	  margin: 5px;
+	}
+      `}</style>
+      <div className="root">
+	<div className="score">{learned.length} / {scoreMap.size}</div>
+	{learned.map(node => (
+	 <div key={node.char} className="key">{node.char.toUpperCase()}</div>
+	))}
+      </div>
+    </>
+  );
+}
+
+const Prompt = ({ position, error, prompt, layout, scoreMap }) => {
   const prev = prompt
     .slice(0, position)
     .map(key => key.toString())
@@ -55,6 +93,7 @@ const Prompt = ({ position, error, prompt, layout }) => {
     .join('');
   return (
     <>
+      <ScoreBoard scoreMap={scoreMap}/>
       <div className="prompt">
         <span>
           <span className="prev">{prev}</span>
@@ -69,6 +108,7 @@ const Prompt = ({ position, error, prompt, layout }) => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
+	  font-family: 'Roboto Slab', serif;
           font-size: 10vh;
           font-weight: bold;
         }
@@ -93,11 +133,11 @@ const Prompt = ({ position, error, prompt, layout }) => {
 };
 
 const Game = ({ layout }) => {
-  const learnings = useRef(buildLearningsMap(layout));
+  const scoreMap = useRef(buildLearningsMap(layout));
   const [promptState, setWordState] = useState({
     position: 0,
     error: false,
-    prompt: generatePrompt(layout, learnings.current),
+    prompt: generatePrompt(layout, scoreMap.current),
   });
   useEffect(() => {
     const sound = {
@@ -112,8 +152,8 @@ const Game = ({ layout }) => {
         const currentKey = prompt[position];
         if (keyCode === currentKey.keyCode) {
           if (!error) {
-            const score = Math.min(learnings.current.get(currentKey) + 1, 7);
-            learnings.current.set(currentKey, score);
+            const score = Math.min(scoreMap.current.get(currentKey) + 1, 7);
+            scoreMap.current.set(currentKey, score);
             if (isLastPosition) {
               sound.success.pause();
               sound.success.currentTime = 0;
@@ -123,7 +163,7 @@ const Game = ({ layout }) => {
           return {
             position: isLastPosition ? 0 : position + 1,
             prompt: isLastPosition
-              ? generatePrompt(layout, learnings.current)
+              ? generatePrompt(layout, scoreMap.current)
               : prompt,
 
             error: false,
@@ -131,9 +171,9 @@ const Game = ({ layout }) => {
         }
         sound.error.play();
         if (error) return state;
-        learnings.current.set(
+        scoreMap.current.set(
           currentKey,
-          Math.max(learnings.current.get(currentKey) - 1, 0),
+          Math.max(scoreMap.current.get(currentKey) - 1, 0),
         );
         return { ...state, error: true };
       });
@@ -142,7 +182,11 @@ const Game = ({ layout }) => {
     return () => removeEventListener('keydown', handler);
   }, [setWordState]);
 
-  return <Prompt {...promptState} layout={layout} />;
+  return (
+    <>
+      <Prompt {...promptState} layout={layout} scoreMap={scoreMap.current}/>
+    </>
+  );
 };
 
 export default Game;
