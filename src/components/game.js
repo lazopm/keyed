@@ -111,6 +111,7 @@ const Prompt = ({ position, error, prompt, layout, scoreMap }) => {
 	  font-family: 'Roboto Slab', serif;
           font-size: 10vh;
           font-weight: bold;
+	  font-variant-ligatures: none;
         }
         .prompt .inner {
           flex-grow: 1;
